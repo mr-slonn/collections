@@ -4,11 +4,17 @@ import data.Item
 
 open class CrudService<T : Item> {
     private var id = 1L
-    val elements = mutableListOf<T>()
-    fun add (elem:T):T{
+    var elements = mutableListOf<T>()
+
+    fun clear()
+    {
+        id =1
+        elements = mutableListOf<T>()
+    }
+    fun add (elem:T):Long{
         elem.id = id++
         elements += elem
-        return elements.last()
+        return elements.last().id
     }
 
     fun update(id:Long, update:T):Boolean {
@@ -20,6 +26,7 @@ open class CrudService<T : Item> {
                     throw ServiceException("Попытка редактирования удалённого элемента")
                 }
                 else {
+                    update.id=id
                     elements[index] = update
                     return true
                 }
@@ -46,12 +53,17 @@ open class CrudService<T : Item> {
         return false
     }
 
-    fun getById(id:Long):T?
+    fun getById(id:Long, isDeleting:Boolean=false):T?
     {
         for (elem in elements) {
             if (elem.id == id) {
 
-                return elem
+                if (elem.isDeleting && !isDeleting) {
+                    throw ServiceException("Попытка получения удалённого элемента")
+                }
+                else {
+                    return elem
+                }
             }
         }
         return null
@@ -60,10 +72,11 @@ open class CrudService<T : Item> {
     fun get(userId:Long) : MutableList<T> {
         val results = mutableListOf<T>()
         for (elem in elements) {
-            if (elem.ownerId == userId) {
+            if (elem.ownerId == userId && !elem.isDeleting) {
                 results.add(elem)
             }
         }
+
         return  results
     }
 }
